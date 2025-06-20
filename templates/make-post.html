@@ -1,0 +1,59 @@
+{% block content %} {% include "header.html" %}
+
+<!-- Page Header -->
+<header
+  class="masthead"
+  style="background-image: url('../static/assets/img/edit-bg.jpg')"
+>
+  <div class="container position-relative px-4 px-lg-5">
+    <div class="row gx-4 gx-lg-5 justify-content-center">
+      <div class="col-md-10 col-lg-8 col-xl-7">
+        <div class="page-heading">
+          <!-- TODO: Show a different h1 if editing existing post -->
+          {% if edit == True %}
+            <h1>Edit Post</h1>
+          {% else %}
+            <h1>New Post</h1>
+          {% endif %}
+
+          <span class="subheading"
+            >You're going to make a great blog post!</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="mb-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <!-- TODO:-Add CKEditor and render the form here -->
+        <form
+          method="POST"
+          action="{% if edit %}{{ url_for('edit_post', id=existing_post.id) }}{% else %}{{ url_for('add_post') }}{% endif %}">
+
+          {{ ckeditor.load() }}
+{{ ckeditor.config(name='body') }}
+          <p>
+          {{form.title.label}} {{form.title}}
+            </p>
+           <p>
+          {{form.subtitle.label}} {{form.subtitle}}
+            </p>
+          <p>
+            {{form.img_url.label}} {{form.img_url}}
+          </p>
+           <p>
+          {{form.body.label}} {{form.body}}
+            </p>
+        <p>
+          {{form.submit}}
+        </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+{% include "footer.html" %} {% endblock %}
