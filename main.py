@@ -100,7 +100,9 @@ def show_post(post_id):
     # TODO: Retrieve a BlogPost from the database based on the post_id
     requested_post = db.session.get(BlogPost,post_id)
     comment_form = CommentForm()
-    return render_template("post.html", post=requested_post,form=comment_form)
+    similar_posts = get_similar_posts(post_id)
+    print(similar_posts)
+    return render_template("post.html", post=requested_post,form=comment_form,similar_posts=similar_posts)
 
 
 
@@ -240,21 +242,64 @@ def logout():
     logout_user()
     return redirect(url_for('get_all_posts'))
 
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+def get_similar_posts(current_post_id, limit=3):
+    posts = BlogPost.query.all()
+
+    # Get list of post ids and combined text (title + subtitle)
+    ids = [post.id for post in posts]
+    documents = [f"{post.title} {post.subtitle}" for post in posts]
+
+    # TF-IDF vectorization
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(documents)
+
+    # Find index of the current post
+    try:
+        index = ids.index(current_post_id)
+    except ValueError:
+        return []
+
+    # Compute cosine similarity
+    cosine_sim = cosine_similarity(tfidf_matrix[index:index + 1], tfidf_matrix).flatten()
+
+    # Get indices of top similar posts excluding the current one
+    similar_indices = cosine_sim.argsort()[::-1]
+
+    # Filter out current post and low similarity scores
+    filtered = [
+        i for i in similar_indices
+        if i != index and cosine_sim[i] > 0.2
+    ][:limit]  # Limit to top N
+
+    similar_posts = [posts[i] for i in filtered]
+    return similar_posts
+
+
+
 @app.route('/posts/<int:id>',methods=['POST','GET'])
 def comment(id):
     form = CommentForm()
     if request.method=='POST':
         new_comment = Comment(
-            text=form.comment_text.data,  # your Comment model column is "text"
+            text=form.comment_text.data,
             user_id=current_user.id,
             blog_id=id
         )
         db.session.add(new_comment)
         db.session.commit()
-        return redirect(url_for('get_all_posts', post_id=id))  # Better than "success"
+        return redirect(url_for('get_all_posts', post_id=id))
 
         # If GET → show the post + comments
     post = db.session.get(BlogPost, id)
+
     return render_template("post.html", post=post, form=form)
 
 if __name__ == "__main__":

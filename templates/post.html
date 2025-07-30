@@ -54,7 +54,21 @@
   </div>
 
 {% endfor %}
-
+{% if current_user.id!=1 %}
+<hr>
+<h3>Similar Posts You Might Like</h3>
+<ul>
+  {% for sim_post in similar_posts %}
+    <li>
+      <a href="{{ url_for('comment', id=sim_post.id) }}">
+        <strong>{{ sim_post.title }}</strong> - {{ sim_post.subtitle }}
+      </a>
+    </li>
+  {% else %}
+    <p>No similar posts found.</p>
+  {% endfor %}
+</ul>
+        {% endif %}
       </div>
     </div>
   </div>
